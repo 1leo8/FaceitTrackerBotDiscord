@@ -4,17 +4,20 @@ import requests
 import os
 import json
 
-# Replace 'YOUR_DISCORD_BOT_TOKEN' with your actual bot token
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN', 'YOUR_DISCORD_BOT_TOKEN')
-# Replace 'YOUR_FACEIT_API_KEY' with your actual FACEIT API key
-FACEIT_API_KEY = os.getenv('FACEIT_API_KEY', 'YOUR_FACEIT_API_KEY')
+# Load tokens from environment variables (set in .env or Render.com dashboard)
+DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')  # Discord bot token from environment
+FACEIT_API_KEY = os.getenv('FACEIT_API_KEY')  # FACEIT API key from environment
+
+# Set up Discord bot with required intents
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent for command processing
 bot = commands.Bot(command_prefix='#', intents=intents)
 
+# Path to the file storing Discord user to FACEIT username links
 LINKS_FILE = os.path.join(os.path.dirname(__file__), 'faceit_links.json')
 
 def load_links():
+    """Load Discord user to FACEIT username links from file."""
     try:
         with open(LINKS_FILE, 'r') as f:
             return json.load(f)
@@ -22,16 +25,18 @@ def load_links():
         return {}
 
 def save_links(links):
+    """Save Discord user to FACEIT username links to file."""
     with open(LINKS_FILE, 'w') as f:
         json.dump(links, f)
 
 @bot.event
 async def on_ready():
+    """Event handler for when the bot is ready."""
     print(f'Logged in as {bot.user}')
 
 @bot.command()
 async def faceitsearch(ctx, *, username: str):
-    """Search FACEIT stats for a given username."""
+    """Search FACEIT stats for a given username and display them in an embed."""
     headers = {"Authorization": f"Bearer {FACEIT_API_KEY}"}
     user_url = f"https://open.faceit.com/data/v4/players?nickname={username}"
     user_resp = requests.get(user_url, headers=headers)
@@ -58,6 +63,7 @@ async def faceitsearch(ctx, *, username: str):
     level_img_url = None
     if faceit_level:
         level_img_url = f"https://cdn.faceit.com/images/levels/csgo/level_{faceit_level}_svg.svg"
+    # Fetch player stats
     stats_url = f"https://open.faceit.com/data/v4/players/{player_id}/stats/cs2"
     stats_resp = requests.get(stats_url, headers=headers)
     if stats_resp.status_code != 200:
@@ -68,6 +74,7 @@ async def faceitsearch(ctx, *, username: str):
     matches = lifetime.get('Matches', 'N/A')
     winrate = lifetime.get('Win Rate %', 'N/A')
     kd = lifetime.get('Average K/D Ratio', 'N/A')
+    # Build and send Discord embed with stats
     embed = discord.Embed(title=f"FACEIT Stats for {username}", color=0x00ff00)
     if avatar_url:
         embed.set_thumbnail(url=avatar_url)
