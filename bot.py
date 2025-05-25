@@ -16,6 +16,7 @@ FACEIT_API_KEY = os.getenv('FACEIT_API_KEY')  # FACEIT API key from environment
 class FaceitBot(commands.Bot):
     async def setup_hook(self):
         # Fetch guild (server) ID from environment variable for instant slash command sync
+        GUILD_ID = int(os.getenv('GUILD_ID', '1376049010552602798'))  # Default to your server if not set
         guild = discord.Object(id=GUILD_ID)
         # Remove all global commands to avoid duplicates
         self.tree.clear_commands(guild=None)
