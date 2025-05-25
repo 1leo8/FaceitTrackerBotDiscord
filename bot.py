@@ -13,18 +13,10 @@ dotenv.load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')  # Discord bot token from environment
 FACEIT_API_KEY = os.getenv('FACEIT_API_KEY')  # FACEIT API key from environment
 
-class FaceitBot(commands.Bot):
-    async def setup_hook(self):
-        # Fetch guild (server) ID from environment variable for instant slash command sync
-        GUILD_ID = int(os.getenv('GUILD_ID', '1376049010552602798'))
-        guild = discord.Object(id=GUILD_ID)
-        # Only sync guild commands for instant appearance (no force refresh)
-        await self.tree.sync(guild=guild)
-
 # Set up Discord bot with required intents
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent for command processing
-bot = FaceitBot(command_prefix='', intents=intents)  # No prefix needed for slash commands
+bot = commands.Bot(command_prefix=commands.when_mentioned_or('/'), intents=intents)
 tree = bot.tree  # Use the built-in tree attribute
 
 # Path to the file storing Discord user to FACEIT username links
@@ -48,6 +40,12 @@ async def on_ready():
     """Event handler for when the bot is ready."""
     print(f'Logged in as {bot.user}')
     print('Bot is ready and commands should be synced to the guild.')
+
+@bot.event
+async def setup_hook():
+    # Sync commands globally instead of just to a guild
+    await tree.sync()
+    print("Slash commands synced globally. It may take up to 1 hour to appear in Discord UI.")
 
 # Slash command: /faceitsearch
 @tree.command(name="faceitsearch", description="Search FACEIT stats for a given username and display them in an embed.")
